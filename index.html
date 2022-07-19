@@ -191,9 +191,17 @@ function refresh(midi) {
                 dots = ' ' + dots;
               }
               if (fingeringStyle != "None") {
-                $('incoming').innerHTML += `<div style="color: ${color}">${fingeringStyle[i]}: ${averages[i]}${dots}</div>`;
+                if (averages[i] == Math.max(...averages) || averages[i] == Math.min(...averages)) {
+                  $('incoming').innerHTML += `<div style="color: ${color}">${fingeringStyle[i]}: ${averages[i]}${dots} <---</div>`;
+                } else {
+                  $('incoming').innerHTML += `<div style="color: ${color}">${fingeringStyle[i]}: ${averages[i]}${dots}</div>`;
+                }
               } else {
-                $('incoming').innerHTML += `<div style="color: ${color}">0: ${averages[i]}${dots}</div>`;
+                if (averages[i] == Math.max(...averages) || averages[i] == Math.min(...averages)) {
+                  $('incoming').innerHTML += `<div style="color: ${color}">0: ${averages[i]}${dots} <---</div>`;
+                } else {
+                  $('incoming').innerHTML += `<div style="color: ${color}">0: ${averages[i]}${dots}</div>`;
+                }
               }
             $('incoming').scrollTop = $('incoming').scrollHeight; 
             $('footer').style.backgroundColor = color;
