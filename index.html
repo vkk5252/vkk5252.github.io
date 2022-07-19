@@ -30,7 +30,7 @@
       }
       #incoming {
         overflow: auto;
-        height: 300px;
+        height: 1000px;
       }  
     </style>
   </head>
@@ -73,6 +73,13 @@ function $(what) {
 }
 var O;
 var I;
+
+trialHistory = [];
+totalHistory = [];
+trialNum = 0;
+fingering = 1;
+fingeringStyle = [1, 2, 3, 1, 2, 3, 4, 5, 4, 3, 2, 1, 3, 2, 1];
+
 if (!('requestMIDIAccess' in navigator)) {
   $('content-body-wrapper').innerHTML = '<h3>try another browser, this one is not there yet</h3>';
 } else {
@@ -101,33 +108,152 @@ function refresh(midi) {
   if (I) {
     I.onmidimessage = msg => {
       const color = getColor();
+
       mdata = `${msg.data}`.split(',')
       if (mdata[0] == '128') {
-        //console.log('Blocked note off message');
+        //console.log('Blocked 'note off' message');
       } else {
-        if (mdata[1] == '36' || mdata[1] == '84') {
-          $('incoming').innerHTML += `<div style="color: ${color}">empty</div>`;
-          $('incoming').innerHTML += `<div style="color: ${color}">empty</div>`;
-          $('incoming').innerHTML += `<div style="color: ${color}">empty</div>`;
-          $('incoming').scrollTop = $('incoming').scrollHeight; 
-          $('footer').style.backgroundColor = color;
-        } else {
-          volumeString = mdata[2];
-          volumeInt = Math.ceil(parseFloat(volumeString)/5);
-          console.log('github test 1000005')
-          //console.log(volumeString)
-          //console.log(volumeInt)
-          dots = '';
-          for (let i = 0; i < volumeInt; i++) {
-            dots += '-';
-          }
-          dots += '00000000000000000000000000'.substring(0,20-dots.length);
-          if (mdata[2].length == 1) {
-            dots = ' ' + dots;
-          }
-          $('incoming').innerHTML += `<div style="color: ${color}">${msg.data}${dots}</div>`;
-          $('incoming').scrollTop = $('incoming').scrollHeight; 
-          $('footer').style.backgroundColor = color;
+        switch (parseInt(mdata[1])) {
+
+
+          //restart trial
+          case 36:
+            trialHistory = [];
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').scrollTop = $('incoming').scrollHeight; 
+            $('footer').style.backgroundColor = color;
+            break;
+          
+
+          //add trial
+          case 38:
+            if (totalHistory.length == 0) {
+              if (trialHistory.length != fingeringStyle.length && fingeringStyle != "None") {
+                  $('incoming').innerHTML += `<div style="color: ${color}">Cannot add, fingering style length does not match trial history length</div>`;
+                  $('incoming').innerHTML += `<div style="color: ${color}">Fingering selected: ${fingeringStyle}</div>`;
+                  $('incoming').scrollTop = $('incoming').scrollHeight; 
+                  $('footer').style.backgroundColor = color;
+                  break;
+              } else {
+                totalHistory = trialHistory;
+                trialHistory = [];
+                trialNum++;
+                $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}">Trial added</div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+                $('incoming').scrollTop = $('incoming').scrollHeight; 
+                $('footer').style.backgroundColor = color;
+                break;
+              }
+            } else {
+              if (totalHistory.length == trialHistory.length) {
+                for (let i = 0; i < totalHistory.length; i++) {
+                  totalHistory[i] += trialHistory[i];
+                }
+                trialHistory = [];
+                trialNum++;
+                $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}">Trial added</div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+                $('incoming').scrollTop = $('incoming').scrollHeight; 
+                $('footer').style.backgroundColor = color;
+              } else {
+                $('incoming').innerHTML += `<div style="color: ${color}">Cannot add, trial is different length than average</div>`;
+                $('incoming').scrollTop = $('incoming').scrollHeight; 
+                $('footer').style.backgroundColor = color;
+              }
+            }
+            break;
+          
+
+          //show total averages
+          case 40:
+            averages = [];
+            for (let i = 0; i < totalHistory.length; i++) {
+              average = Math.round(totalHistory[i] / trialNum);
+              averages.push(average)
+            }
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">Average over ${trialNum} trials:</div>`;
+
+            for (let i = 0; i < averages.length; i++) {
+              volumeInt = Math.ceil(parseFloat(averages[i])/5);
+              dots = '';
+              for (let i = 0; i < volumeInt; i++) {
+                dots += '-';
+              }
+              dots += '00000000000000000000000000'.substring(0,20-dots.length);
+              if (mdata[2].length == 1) {
+                dots = ' ' + dots;
+              }
+              if (fingeringStyle != "None") {
+                $('incoming').innerHTML += `<div style="color: ${color}">${fingeringStyle[i]}: ${averages[i]}${dots}</div>`;
+              } else {
+                $('incoming').innerHTML += `<div style="color: ${color}">0: ${averages[i]}${dots}</div>`;
+              }
+            $('incoming').scrollTop = $('incoming').scrollHeight; 
+            $('footer').style.backgroundColor = color;
+            }
+            break;
+
+
+          //delete total averages
+          case 41:
+            totalHistory = [];
+            trialHistory = [];
+            trialNum = 0;
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">Cleared averages</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').scrollTop = $('incoming').scrollHeight; 
+            $('footer').style.backgroundColor = color;
+            break;
+          
+          
+          //switch fingering
+          case 43:
+            fingering++;
+            fingering = fingering % 3;
+            switch (fingering) {
+              case 0: 
+                fingeringStyle = "None";
+                break;
+              case 1:
+                fingeringStyle = [1, 2, 3, 1, 2, 3, 4, 5, 4, 3, 2, 1, 3, 2, 1];
+                break;
+              case 2:
+                fingeringStyle = [1, 2, 3, 1, 2, 3, 4, 5];
+                break;
+            }
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">Fingering switched to ${fingering}/3: ${fingeringStyle}</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
+            $('incoming').scrollTop = $('incoming').scrollHeight; 
+            $('footer').style.backgroundColor = color;
+            break;
+
+          
+          default:
+            trialHistory.push(parseInt(mdata[2]))
+            volumeString = mdata[2];
+            volumeInt = Math.ceil(parseFloat(volumeString)/5);
+            dots = '';
+            for (let i = 0; i < volumeInt; i++) {
+              dots += '-';
+            }
+            dots += '00000000000000000000000000'.substring(0,20-dots.length);
+            if (mdata[2].length == 1) {
+              dots = ' ' + dots;
+            }
+            $('incoming').innerHTML += `<div style="color: ${color}">${mdata[2]}${dots}</div>`;
+            $('incoming').scrollTop = $('incoming').scrollHeight; 
+            $('footer').style.backgroundColor = color;
+            break;
         }
       }
     };      
