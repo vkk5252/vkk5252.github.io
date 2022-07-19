@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)https://www.onlinemusictools.com/webmiditest/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Web MIDI test page</title>
+    <style>
+      #content-body-wrapper {
+        display: table;
+        width: 100%;
+      }
+      #content-body {
+        display: table-row;
+      }  
+      #primary, #secondary, #tertiary {
+        display: table-cell;
+        width: 33.33%;
+      }
+      #footer {
+        height: 100px;
+        padding-top: 40px;
+      }
+      body {
+        color: #333;
+        font-family: Helvetica Neue, Helvetica, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+      #incoming {
+        overflow: auto;
+        height: 300px;
+      }  
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <h1>Web MIDI test page</h1>
+    </div>
+ 
+    <div id="content-body-wrapper">
+      <div id="content-body">
+        <div id="primary">
+          <h2>Device</h2>
+          <pre id="device">Output: Roland Digital Piano<br>Input: Roland Digital Piano</pre>
+        </div>
+        <div align="left" id="secondary">
+          <h2>Incoming messages</h2>
+          <pre id="incoming">*crickets*</pre>
+        </div>
+        <div id="tertiary">
+          <h2>Send a message</h2>
+          <button onclick="send([144, 60, 100])">middle C</button>
+          <button onclick="send([144, 60,  50])">middle C softer</button>
+          <button onclick="send([144, 60, 127])">middle C loudest</button>
+          <p>
+            Random msg:
+            <input value="[144, 48, 100]" id="msg"><button onclick="rando()">send</button>
+            </p><div id="err" style="color: red"></div>
+          <p></p>
+        </div>
+      </div>
+    </div>
+     
+    <div id="footer" style="background-color: rgb(159, 171, 127);">
+      <a href="https://www.twitter.com/stoyanstefanov">feedback?</a>
+    </div>
+
+<script>
+function $(what) {
+  return document.getElementById(what);
+}
+var O;
+var I;
+if (!('requestMIDIAccess' in navigator)) {
+  $('content-body-wrapper').innerHTML = '<h3>try another browser, this one is not there yet</h3>';
+} else {
+  navigator.requestMIDIAccess().then(midi => {
+    refresh(midi);
+    midi.onstatechange = e => refresh(e.target);
+  });
+}
+
+function refresh(midi) {
+
+  I = midi.inputs.size 
+    ? midi.inputs.values().next().value
+    : void(0);
+  O = midi.outputs.size 
+    ? midi.outputs.values().next().value
+    : void(0);
+
+  console.log(O);
+  console.log(I);
+  $('device').innerHTML = [
+    'Output: ' + (O ? O.name : 'none'),
+    '<br>Input: ' + (I ? I.name : 'none'),
+  ].join('');
+
+  if (I) {
+    I.onmidimessage = msg => {
+      const color = getColor();
+      mdata = `${msg.data}`.split(',')
+      if (mdata[0] == '128') {
+        //console.log('Blocked note off message');
+      } else {
+        if (mdata[1] == '36' || mdata[1] == '84') {
+          $('incoming').innerHTML += `<div style="color: ${color}">empty</div>`;
+          $('incoming').innerHTML += `<div style="color: ${color}">empty</div>`;
+          $('incoming').innerHTML += `<div style="color: ${color}">empty</div>`;
+          $('incoming').scrollTop = $('incoming').scrollHeight; 
+          $('footer').style.backgroundColor = color;
+        } else {
+          volumeString = mdata[2];
+          volumeInt = Math.ceil(parseFloat(volumeString)/5);
+          console.log('github test 100')
+          //console.log(volumeString)
+          //console.log(volumeInt)
+          dots = '';
+          for (let i = 0; i < volumeInt; i++) {
+            dots += '-';
+          }
+          dots += '00000000000000000000000000'.substring(0,20-dots.length);
+          if (mdata[2].length == 1) {
+            dots = ' ' + dots;
+          }
+          $('incoming').innerHTML += `<div style="color: ${color}">${msg.data}${dots}</div>`;
+          $('incoming').scrollTop = $('incoming').scrollHeight; 
+          $('footer').style.backgroundColor = color;
+        }
+      }
+    };      
+  }
+  
+  if (O) {
+    err.innerHTML = '';
+  }
+}
+
+function getColor() {
+  return '#000000';
+}
+
+function send(msg) {
+  err.innerHTML = '';
+  if (!O) {
+    err.innerHTML = 'No connected devices to send a message to';
+    return;
+  }
+  O.send(msg);
+}
+
+function rando() {
+  err.innerHTML = '';
+  try {
+    send(JSON.parse(msg.value));
+  } catch (e) {
+    err.innerHTML = 'Try again, this message sucked. Make it an array of three numbers, if you don\'t mind';
+  }
+}
+</script>
+
+  
+
+</body></html>
