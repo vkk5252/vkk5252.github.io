@@ -195,6 +195,8 @@ function refresh(midi) {
               } else {
                 $('incoming').innerHTML += `<div style="color: ${color}">0: ${averages[i]}${dots}</div>`;
               }
+            score = Math.min(averages) / Math.max(averages) * 100
+            $('incoming').innerHTML += `<div style="color: ${color}">Score (min % of max): ${score}%</div>`;
             $('incoming').scrollTop = $('incoming').scrollHeight; 
             $('footer').style.backgroundColor = color;
             }
