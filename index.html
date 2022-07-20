@@ -76,9 +76,10 @@ var I;
 
 trialHistory = [];
 totalHistory = [];
-trialNum = 0;
+trialNum = 1;
 fingering = 1;
 fingeringStyle = [1, 2, 3, 1, 2, 3, 4, 5, 4, 3, 2, 1, 3, 2, 1];
+scores = [];
 
 if (!('requestMIDIAccess' in navigator)) {
   $('content-body-wrapper').innerHTML = '<h3>try another browser, this one is not there yet</h3>';
@@ -120,7 +121,7 @@ function refresh(midi) {
           case 36:
             trialHistory = [];
             $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
-            $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">Trial ${trialNum}</div>`;
             $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
             $('incoming').scrollTop = $('incoming').scrollHeight; 
             $('footer').style.backgroundColor = color;
@@ -137,15 +138,19 @@ function refresh(midi) {
                   $('footer').style.backgroundColor = color;
                   break;
               } else {
+                trialScore = Math.round(Math.min(...trialHistory) / Math.max(...trialHistory) * 100);
+                scores.push(trialScore);
+
                 totalHistory = trialHistory;
                 trialHistory = [];
-                trialNum++;
+                $('incoming').innerHTML += `<div style="color: ${color}">Trial score: ${trialScore}%</div>`;
                 $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
-                $('incoming').innerHTML += `<div style="color: ${color}">Trial added</div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}">Trial ${trialNum} added</div>`;
                 $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
                 $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
                 $('incoming').scrollTop = $('incoming').scrollHeight; 
                 $('footer').style.backgroundColor = color;
+                trialNum++;
                 break;
               }
             } else {
@@ -153,14 +158,19 @@ function refresh(midi) {
                 for (let i = 0; i < totalHistory.length; i++) {
                   totalHistory[i] += trialHistory[i];
                 }
+                trialScore = Math.round(Math.min(...trialHistory) / Math.max(...trialHistory) * 100);
+                scores.push(trialScore);
+
+                totalHistory = trialHistory;
                 trialHistory = [];
-                trialNum++;
+                $('incoming').innerHTML += `<div style="color: ${color}">Trial score: ${trialScore}%</div>`;
                 $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
-                $('incoming').innerHTML += `<div style="color: ${color}">Trial added</div>`;
+                $('incoming').innerHTML += `<div style="color: ${color}">Trial ${trialNum} added</div>`;
                 $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
                 $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
                 $('incoming').scrollTop = $('incoming').scrollHeight; 
                 $('footer').style.backgroundColor = color;
+                trialNum++;
               } else {
                 $('incoming').innerHTML += `<div style="color: ${color}">Cannot add, trial is different length than average</div>`;
                 $('incoming').scrollTop = $('incoming').scrollHeight; 
@@ -169,7 +179,6 @@ function refresh(midi) {
             }
             break;
           
-
           //show total averages
           case 40:
             averages = [];
@@ -206,8 +215,12 @@ function refresh(midi) {
             $('incoming').scrollTop = $('incoming').scrollHeight; 
             $('footer').style.backgroundColor = color;
             }
-            score = Math.round(Math.min(...averages) / Math.max(...averages) * 100);
-            $('incoming').innerHTML += `<div style="color: ${color}">Score (min % of max): ${score}%</div>`;
+            scoreAverage = scores.reduce((partialSum, a) => partialSum + a, 0) / scores.length;
+            scoreConsistency = Math.round(Math.min(...scores) / Math.max(...scores) * 100);
+            totalScore = Math.round((scoreAverage * scoreConsistency) / 100);
+            $('incoming').innerHTML += `<div style="color: ${color}">Average score: ${scoreAverage}%</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">Score consistency: ${scoreConsistency}%</div>`;
+            $('incoming').innerHTML += `<div style="color: ${color}">Total score (average * consistency): ${totalScore}%</div>`;
             $('incoming').scrollTop = $('incoming').scrollHeight; 
             $('footer').style.backgroundColor = color;
             break;
@@ -217,7 +230,8 @@ function refresh(midi) {
           case 41:
             totalHistory = [];
             trialHistory = [];
-            trialNum = 0;
+            trialNum = 1;
+            scores = [];
             $('incoming').innerHTML += `<div style="color: ${color}"> </div>`;
             $('incoming').innerHTML += `<div style="color: ${color}">Cleared averages</div>`;
             $('incoming').innerHTML += `<div style="color: ${color}">New trial</div>`;
